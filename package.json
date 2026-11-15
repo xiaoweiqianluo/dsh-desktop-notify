@@ -1,0 +1,25 @@
+{
+  "name": "@local/dsh-desktop-notify",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "QQ-style desktop popup when a turn finishes or the Harness waits for you, while its window is not in front.",
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "card.ps1",
+    "cordis.patch.yml",
+    "README.md",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

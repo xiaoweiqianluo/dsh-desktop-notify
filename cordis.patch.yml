@@ -1,0 +1,18 @@
+- insert:
+    - id: desktop-notify
+      name: '@local/dsh-desktop-notify'
+      config:
+        enabled: true
+        notifyOnTurnEnd: true
+        notifyOnError: true
+        notifyOnApproval: true
+        notifyOnQuestion: true
+        notifyWhenFocused: false
+        silent: false
+        animate: true
+        cardDurationMs: 12000
+        waitingDurationMs: 24000
+        summaryChars: 90
+        appProcessName: 'DeepSeek Harness'
+        language: zh
+        logFile: ''

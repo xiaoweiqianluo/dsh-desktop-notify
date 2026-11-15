@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Desktop popup alerts",
+    "description": "Drops a small card in the bottom-right corner of the primary screen when a turn finishes, fails, or the Harness waits for your approval or answer — a chat-app style popup that only appears while the Harness window is not in front. Click the card to bring the window back; it closes itself otherwise. Configure it in the desktop-notify row of cordis.patch.yml: enabled, notifyOnTurnEnd, notifyOnError, notifyOnApproval, notifyOnQuestion, notifyWhenFocused, silent, cardDurationMs, waitingDurationMs, summaryChars, language and logFile. Set notifyWhenFocused to true once to preview the card without leaving the window. Windows only: the card is drawn by Windows PowerShell instead of the notification platform, so alerts do not stay in the Action Center."
+  }
+}

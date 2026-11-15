@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "桌面弹窗提醒",
+    "description": "任务完成、出错，或 Harness 需要你确认与回答时，在主屏右下角弹出一张小卡片——只有 Harness 窗口不在前台时才会出现。点一下卡片可以把窗口叫回前台，否则它会自己消失。配置在 cordis.patch.yml 的 desktop-notify 行：enabled、notifyOnTurnEnd、notifyOnError、notifyOnApproval、notifyOnQuestion、notifyWhenFocused、silent、cardDurationMs、waitingDurationMs、summaryChars、language、logFile。把 notifyWhenFocused 设为 true 可以先在窗口里预览卡片效果。仅限 Windows：卡片由 Windows PowerShell 直接绘制而不是走系统通知中心，因此提醒不会留在操作中心。"
+  }
+}
