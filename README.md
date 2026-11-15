@@ -1,7 +1,11 @@
 # 桌面弹窗提醒（dsh-desktop-notify）
 
+[English](#english) | 简体中文
+
 DSH 窗口被最小化、被别的窗口盖住、或者你正在别的程序里时，任务结束或需要你介入的那一刻，
 屏幕右下角会浮起一张小卡片——就是聊天软件收到消息时的那种提示。
+
+![卡片预览](docs/preview.png)
 
 ## 什么时候弹
 
@@ -83,3 +87,87 @@ Windows 的 toast 接口要求调用进程有「程序包身份」，普通桌�
 - 卡片由一次性 PowerShell 进程绘制，事件到出现之间约有 0.3–0.6 秒延迟，并在显示期间保留该进程。
 - 回复过长时正文只显示前四行。
 - 停用插件后立即不再提醒；已经显示的卡片不受影响，会在超时后消失。
+
+---
+
+## English
+
+A Windows-only DeepSeek Harness plugin: when a turn finishes, fails, or the Harness is waiting for
+your approval or answer **while its window is not in front**, a small card slides into the bottom-right
+corner of the primary screen — the same pattern chat apps use for incoming messages.
+
+![Card preview](docs/preview.png)
+
+### Install
+
+In the Web GUI open **Plugins → Add plugin**, enter the Git address
+`github:xiaoweiqianluo/dsh-desktop-notify` (or clone the repository and give its absolute path),
+then enable **Desktop popup alerts** in the plugin list.
+
+Or from a shell with the `dsh` CLI available:
+
+```powershell
+dsh plugin --profile desktop add github:xiaoweiqianluo/dsh-desktop-notify
+```
+
+No dependencies, no build step: the bundle is plain ES module JavaScript plus one PowerShell script.
+It needs Windows 10/11 with Windows PowerShell 5.1 (installed by default).
+
+### When it appears
+
+| Moment | Source | Card |
+| --- | --- | --- |
+| A turn completed | `turn/end: completed` | Green bar · "✓ Task finished" |
+| A turn failed | `turn/end: error` | Red bar · "! Task failed" |
+| Output truncated / blocked / interrupted / stopped | the matching `turn/end` reason | Grey bar |
+| A tool waits for authorization | `approval/request` | Amber bar · "⚠ Your confirmation is needed" |
+| The agent asks a question | `user-questions/request` | Amber bar · "? Your answer is needed" |
+
+It stays silent when the foreground window belongs to the Harness (you are already looking at it),
+for subagent sessions, and for turns you stopped yourself.
+
+### Card behavior
+
+- Always on top of the topmost band, **never takes focus**, never shows in Alt+Tab or the taskbar.
+- Slides in from the right (~220 ms, ease-out); `animate: false` shows it in place.
+- The **✕ in the top-right corner** closes the card without switching windows; hovering highlights it.
+- Clicking anywhere else closes the card and brings the Harness window back (restoring it if minimized).
+- The ✕/click split, per-kind accent colours and fonts are drawn with WinForms and follow the Windows
+  light/dark setting. Completion cards live 12 s, waiting cards 24 s.
+
+### Configuration
+
+Edit the `desktop-notify` row in `cordis.patch.yml`:
+
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `enabled` | `true` | Master switch |
+| `notifyOnTurnEnd` | `true` | Card when a turn completes |
+| `notifyOnError` | `true` | Card when a turn fails |
+| `notifyOnApproval` | `true` | Card when an authorization is pending |
+| `notifyOnQuestion` | `true` | Card when the agent asks a question |
+| `notifyWhenFocused` | `false` | Also alert while focused; for inspecting the card |
+| `silent` | `false` | No system sound |
+| `animate` | `true` | Slide in from the right |
+| `cardDurationMs` | `12000` | Completion card lifetime |
+| `waitingDurationMs` | `24000` | Waiting card lifetime |
+| `summaryChars` | `90` | Maximum preview characters |
+| `appProcessName` | `DeepSeek Harness` | Process name treated as "window in front" |
+| `language` | `zh` | Card copy language, `zh` or `en` |
+| `logFile` | empty | Optional diagnostics log path |
+
+### Why not a Windows toast
+
+The toast API requires package identity; an ordinary desktop process calling it fails with
+`0x80073D54`. This plugin draws its own card with PowerShell and WinForms instead, which works on
+every Windows 10/11 installation and keeps the appearance under control. The trade-off: notifications
+are **not kept in the Action Center**.
+
+### Known limitations
+
+- Windows only; the plugin stays silent elsewhere.
+- The card only appears on the primary screen.
+- A one-shot PowerShell process draws the card: expect 0.3–0.6 s between event and appearance.
+- A long reply is clamped to four lines.
+- A card already on screen closes on its timeout after the plugin is disabled.
+

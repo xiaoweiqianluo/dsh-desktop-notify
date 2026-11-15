@@ -4,6 +4,21 @@
   "private": true,
   "type": "module",
   "description": "QQ-style desktop popup when a turn finishes or the Harness waits for you, while its window is not in front.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xiaoweiqianluo/dsh-desktop-notify.git"
+  },
+  "homepage": "https://github.com/xiaoweiqianluo/dsh-desktop-notify#readme",
+  "bugs": {
+    "url": "https://github.com/xiaoweiqianluo/dsh-desktop-notify/issues"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh-plugin",
+    "windows",
+    "notification"
+  ],
   "exports": {
     ".": "./index.js",
     "./locale/*.json": "./locale/*.json",
@@ -14,6 +29,8 @@
     "card.ps1",
     "cordis.patch.yml",
     "README.md",
+    "LICENSE",
+    "docs",
     "locale/*.json",
     "icon.svg"
   ],
