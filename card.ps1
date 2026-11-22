@@ -86,6 +86,12 @@ public static class DshCardNative {
   [DllImport("user32.dll")]
   public static extern bool ShowWindow(IntPtr hWnd, int cmd);
   [DllImport("user32.dll")]
+  public static extern bool IsIconic(IntPtr hWnd);
+  [DllImport("user32.dll")]
+  public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+  [DllImport("kernel32.dll")]
+  public static extern uint GetCurrentThreadId();
+  [DllImport("user32.dll")]
   public static extern bool SetForegroundWindow(IntPtr hWnd);
   [DllImport("user32.dll")]
   public static extern IntPtr GetForegroundWindow();
@@ -98,6 +104,8 @@ public static class DshCardNative {
 
   public const uint WM_CLOSE = 0x0010;
   public const int SW_RESTORE = 9;
+  public const int SW_SHOW = 5;
+  public const int SW_SHOWMAXIMIZED = 3;
 
   public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
   public const uint SWP_NOSIZE = 0x0001;
@@ -185,6 +193,31 @@ public static class DshCardNative {
     }
     if (seen == 0) return "<nothing above>";
     return result.ToString();
+  }
+  [StructLayout(LayoutKind.Sequential)]
+  public struct POINT { public int X; public int Y; }
+  [StructLayout(LayoutKind.Sequential)]
+  public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
+  [StructLayout(LayoutKind.Sequential)]
+  public struct WINDOWPLACEMENT {
+    public int length;
+    public int flags;
+    public int showCmd;
+    public POINT ptMinPosition;
+    public POINT ptMaxPosition;
+    public RECT rcNormalPosition;
+  }
+  [DllImport("user32.dll")]
+  public static extern bool GetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
+
+  // True when the window was maximized before a possible minimize.
+  // WPF_RESTORETOMAXIMIZED covers "maximized then minimized", where showCmd
+  // is SW_SHOWMINIMIZED.
+  public static bool WasMaximized(IntPtr hWnd) {
+    WINDOWPLACEMENT wp = new WINDOWPLACEMENT();
+    wp.length = Marshal.SizeOf(typeof(WINDOWPLACEMENT));
+    if (!GetWindowPlacement(hWnd, ref wp)) return false;
+    return (wp.flags & 0x0002) != 0 || wp.showCmd == 3;
   }
 }
 
@@ -676,8 +709,34 @@ try {
           Select-Object -First 1
       }
       if ($target) {
-        [void][DshCardNative]::ShowWindow($target.MainWindowHandle, [DshCardNative]::SW_RESTORE)
-        [void][DshCardNative]::SetForegroundWindow($target.MainWindowHandle)
+        # Keep the window state: SW_RESTORE also un-maximizes a maximized
+        # window, so only call it when the window is minimized.
+        $targetHandle = $target.MainWindowHandle
+        $wasMaximized = [DshCardNative]::WasMaximized($targetHandle)
+        if ([DshCardNative]::IsIconic($targetHandle)) {
+          [void][DshCardNative]::ShowWindow($targetHandle, [DshCardNative]::SW_RESTORE)
+        }
+        if ($wasMaximized) {
+          [void][DshCardNative]::ShowWindow($targetHandle, [DshCardNative]::SW_SHOWMAXIMIZED)
+        } else {
+          [void][DshCardNative]::ShowWindow($targetHandle, [DshCardNative]::SW_SHOW)
+        }
+        # The Windows foreground lock can reject SetForegroundWindow even though
+        # the card just handled a click; attach to the foreground thread and
+        # retry when that happens.
+        $fgOk = [DshCardNative]::SetForegroundWindow($targetHandle)
+        if (-not $fgOk) {
+          $fgPid = [uint32]0
+          $foreground = [DshCardNative]::GetForegroundWindow()
+          $fgThread = [DshCardNative]::GetWindowThreadProcessId($foreground, [ref]$fgPid)
+          $myThread = [DshCardNative]::GetCurrentThreadId()
+          if ($fgThread -ne 0) {
+            [void][DshCardNative]::AttachThreadInput($fgThread, $myThread, $true)
+            [void][DshCardNative]::SetForegroundWindow($targetHandle)
+            [void][DshCardNative]::AttachThreadInput($fgThread, $myThread, $false)
+          }
+        }
+        Write-CardLog "focus target=$targetHandle maximized=$wasMaximized setfg=$fgOk foregroundAfter=$([DshCardNative]::DescribeForeground())"
       }
     } catch {
       Write-CardLog "focus failed: $($_.Exception.Message)"
